@@ -1,0 +1,223 @@
+---
+title: "promor_supplementary_figures"
+output: html_document
+date: "2023-01-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# promor: a comprehensive R package for label-free proteomics data analysis and predictive modeling
+
+## Supplementary Figures
+
+
+```{r upload}
+library(promor)
+raw1 <- create_df(
+  prot_groups = "https://raw.githubusercontent.com/caranathunge/promor_example_data/main/pg1.txt",
+  exp_design = "https://raw.githubusercontent.com/caranathunge/promor_example_data/main/ed1.txt"
+)
+raw_filtered <- filterbygroup_na(raw1, set_na = 0.4)
+```
+
+### Figure S1
+
+Fig. S 1: A heatmap showing the missing data distribution in protein intensity data. The data consists
+of protein intensity values for 4584 protein groups (rows) in six samples. The proteins on the y-axis have
+been reordered by mean intensity and the samples on the x-axis by the sum of intensity to show missing
+data distribution patterns in the data. Proteins with lower mean intensity appear to have higher levels of
+missing data and sample H 3 have the most number of missing values. Input data from Cox et al. (2014)
+downloaded from the PRIDE Archive (PRIDE ID: PXD000279).
+
+```{r heatmapna}
+heatmap_na(raw_filtered, palette = "magma", 
+           reorder_y = TRUE, y_fun = mean,
+           reorder_x = TRUE, x_fun =sum,
+           plot_width = 3, plot_height = 6)
+```
+
+
+### Figure S2
+
+Fig. S 2: Density plots showing the impact of missing data imputation on the protein intensity data
+distribution in each sample. ‘minProb’ imputation method was used. Input data from Cox et al. (2014)
+downloaded from the PRIDE Archive (PRIDE ID: PXD000279).
+
+```{r imputeplot}
+imp_df_mp <- impute_na(raw_filtered, method = "minProb", seed = 327)
+impute_plot(original = raw_filtered, 
+            imputed = imp_df_mp, 
+            global = FALSE, 
+            n_row = 3, n_col = 3, palette = "magma",
+            plot_width = 6, plot_height = 3.5)
+```
+
+
+### Figure S3
+
+**For visualization purposes only. This data set does not need to be normalized as it has been already normalized with the MaxLFQ algorithm**
+
+Fig. S 3: Density plots showing the impact of data normalization on the protein intensity data distribution.
+‘quantile’ normalization method was applied here for visualization purposes only. Input data from Cox et al.
+(2014) downloaded from the PRIDE Archive (PRIDE ID: PXD000279).
+
+```{r normeplot}
+norm_df <- normalize_data(imp_df_mp)
+norm_plot(original = imp_df_mp, normalized = norm_df, type = "density", palette = "magma",
+          plot_width = 5, plot_height = 3.5)
+     
+```    
+
+
+
+### Figure S4
+
+Fig. S 4: Volcano plot showing the results from the differential expression analysis. Significance criteria
+used: log-2-fold change of 1 and adjusted p-value of 0.05. Protein groups meeting the significance criteria
+are colored in orange. Input data from Cox et al. (2014) downloaded from the PRIDE Archive (PRIDE ID:
+PXD000279).
+
+
+```{r volcanoplot}
+fit_df <- find_dep(imp_df_mp)
+volcano_plot(fit_df,
+             text_size = 6,
+             palette = "magma")
+```   
+
+
+
+### Figure S5
+
+Fig. S 5: Heatmap showing the results from the differential expression analysis. The top 20 protein groups
+that meet the significance criteria (log-2-fold change of 1 and adjusted p-value of 0.05) are shown here. Input
+data from Cox et al. (2014) downloaded from the PRIDE Archive (PRIDE ID: PXD000279).
+4
+
+
+```{r heatmapde}
+heatmap_de(fit_df,
+           imp_df_mp,
+           palette = "magma")
+   
+```   
+
+### Figure S6
+
+Fig. S 6: Scatter plots showing the correlation of intensities between pairs of technical replicates. The data
+consists of protein intensity values for 839 protein groups in six samples. Input data from Ramond et al.
+(2015) downloaded from the PRIDE Archive (PRIDE ID: PXD001584).
+
+```{r corrplot}
+raw2 <- create_df(
+  prot_groups = "https://raw.githubusercontent.com/caranathunge/promor_example_data/main/pg2.txt",
+  exp_design = "https://raw.githubusercontent.com/caranathunge/promor_example_data/main/ed2.txt",
+  tech_reps = TRUE
+)
+
+corr_plot(raw2, rep_1 = 1, 
+          rep_2 = 2,
+          n_row = 3, 
+          n_col = 2, 
+          text_size = 12, 
+          palette = "magma")
+```         
+   
+### Figure S7
+
+Volcano plot showing the results from the differential expression analysis. Significance criteria
+used: log-2-fold change of 1 and adjusted p-value of 0.05. Protein groups meeting the significance criteria
+are colored in orange. Input data from Ramond et al. (2015) downloaded from the PRIDE Archive (PRIDE
+ID: PXD001584).
+
+```{r volcanoplot2}
+raw_ave <- aver_techreps(raw2)
+raw_filtered <- filterbygroup_na(raw_ave, set_na = 0.40)
+imp_df_mp2 <- impute_na(raw_filtered)
+fit_df2 <- find_dep(imp_df_mp2)
+volcano_plot(fit_df, 
+             palette = "magma")
+
+```
+    
+### Figure S8
+
+Fig. S 8: The variation of intensities in six proteins between COVID severe and non-severe patient groups.
+Input data from Suvarna et al. (2021) downloaded from the PRIDE Archive (PRIDE ID: PXD022296).
+         
+```{r preprocess}
+covid_model_df <- pre_process(
+  covid_fit_df, 
+  covid_norm_df
+)
+feature_plot(
+    model_df = covid_model_df,
+    type = "density",
+    n_row = 4,
+    n_col = 2,
+    palette = "magma"
+)
+```
+
+### Figure S9
+
+Fig S9: Dot plots showing model performance. Models built using four machine-learning algorithms are
+assessed for performance using Accuracy and Kappa. Input data from Suvarna et al. (2021) downloaded
+from the PRIDE Archive (PRIDE ID: PXD022296).
+
+```{r perforplot}
+covid_split_df <- split_data(model_df = covid_model_df, seed = 8314)
+covid_model_list <- train_models(split_df = covid_split_df, 
+                                 algorithm_list= c("svmLinear",
+                                                  "naive_bayes",
+                                                  "knn",
+                                                  "rf"),
+                                 seed = 351)
+performance_plot(
+  model_list = covid_model_list,
+  type = "dot",
+  palette = "magma"
+)
+```
+
+
+### Figure S10
+
+Fig S10: Lollipop plots showing variable (protein) importance. Proteins are sorted according to their
+importance in the models built using four different machine learning algorithms. Input data from Suvarna
+et al. (2021) downloaded from the PRIDE Archive (PRIDE ID: PXD022296).
+
+```{r varimp}
+varimp_plot(
+  model_list = covid_model_list,
+  text_size = 7,
+  n_row = 2,
+  n_col = 2,
+  palette = "magma"
+)
+```
+     
+     
+### Figure S11
+
+Fig. S 11: Receiver operating characteristic curves illustrating the diagnostic ability of the models built
+using four different machine learning algorithms. Area under the curve (AUC) estimates are indicated in each
+plot. Input data from Suvarna et al. (2021) downloaded from the PRIDE Archive (PRIDE ID: PXD022296).
+     
+``` {r rocplot}
+covid_prob_list <- test_models(
+  model_list = covid_model_list,
+  split_df = covid_split_df,
+  type = "prob"
+)
+roc_plot(
+  probability_list = covid_prob_list,
+  split_df = covid_split_df,
+  palette = "magma")
+```
+     
+     
+     
+     
