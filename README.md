@@ -7,4 +7,5 @@ Code for recreating figures and tables in the supplementary material provided in
 ### Benchmarking
 
 Code for benchmarking promor against Perseus: promor_vs_perseus.R
+
 Files required: Perseus_MinProb_noNormalization_DEresults.txt
